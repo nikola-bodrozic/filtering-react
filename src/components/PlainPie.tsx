@@ -1,14 +1,19 @@
 import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
 
-interface SalesDataProps {
-  data: { name: string; value: number }[];
+export interface ManufacturerData {
+  value: number;
+  [key: string]: string | number;
+}
+
+export interface CarSalesDataProps {
+  data: ManufacturerData[];
   title: string;
 }
 
-// receive object as prop
-const PlainPie = ({ data, title }: SalesDataProps) => {
+//recevive object as prop in Child
+const PlainPie = ({data, title}: CarSalesDataProps) => {
   return (
-    <>
+    <div style={{ border: "3px dotted black", padding: "1em" }}>
       <h1>{title}</h1>
       <PieChart width={300} height={300}>
         <Pie
@@ -17,7 +22,7 @@ const PlainPie = ({ data, title }: SalesDataProps) => {
           nameKey="name"
           cx="50%"
           cy="50%"
-          outerRadius={120}
+          outerRadius={90}
           label={(entry) => `${entry.name ?? ''}: ${entry.value?.toLocaleString() ?? 0}`}
         >
           {data.map((_entry, index) => (
@@ -30,7 +35,7 @@ const PlainPie = ({ data, title }: SalesDataProps) => {
         <Tooltip formatter={(value: number) => value.toLocaleString()} />
         <Legend />
       </PieChart>
-    </>
+    </div>
   );
 }
 
