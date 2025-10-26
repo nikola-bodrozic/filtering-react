@@ -7,7 +7,15 @@ export const sales2024 = [
   { name: "Others", value: 110000 },
 ];
 
-export const cars = [
+export interface Car {
+    id: number;
+    company: string;
+    model: string;
+    price: string;
+    available: boolean;
+}
+
+export const cars: Array<Car> = [
   { id: 1, company: 'Toyota', model: 'Corolla', price: '$20000', available: true },
   { id: 2, company: 'Honda', model: 'Civic', price: '$22000', available: true },
   { id: 3, company: 'Ford', model: 'Mustang', price: '$35000', available: false },
