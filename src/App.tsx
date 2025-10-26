@@ -4,6 +4,7 @@ import Filter from "./components/Filter";
 import "./App.css";
 import { sales2024 } from "./components/values";
 import AdvancedFilter from "./components/AdvancedFilter";
+import MultiFilter from "./components/MultiFilter";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const deepCompare = (prevProps: any, nextProps: any) => {
@@ -20,6 +21,8 @@ export default function App() {
       <Filter />
       <hr />
       <AdvancedFilter />
+      <hr />
+      <MultiFilter />
     </div>
   );
 }

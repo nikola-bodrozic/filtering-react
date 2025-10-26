@@ -7,7 +7,7 @@ interface Product {
     name: string;
 }
 
-const cars: Product[] = [
+const fruits: Product[] = [
     { category: "Fruits", price: "$1", stocked: true, name: "Apple" },
     { category: "Fruits", price: "$1", stocked: true, name: "Dragonfruit" },
     { category: "Fruits", price: "$2", stocked: false, name: "Passionfruit" },
@@ -24,9 +24,9 @@ const Filter = () => {
     useEffect(() => {
         let filtered: Product[] = [];
         if (input === "") {
-            filtered = [...cars];
+            filtered = [...fruits];
         } else {
-            filtered = cars.filter((p: Product) => {
+            filtered = fruits.filter((p: Product) => {
                 const n = input.toLowerCase()
                 const h = p.name.toLowerCase()
                 return h.includes(n)
