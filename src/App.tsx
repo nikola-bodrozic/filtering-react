@@ -1,4 +1,5 @@
 import { memo } from "react";
+import isEqual from "lodash.isequal";
 import PlainPie from "./components/PlainPie";
 import Filter from "./components/Filter";
 import "./App.css";
@@ -9,7 +10,7 @@ import TwoInputFields from "./components/TwoInputFields";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const deepCompare = (prevProps: any, nextProps: any) => {
-  return JSON.stringify(prevProps) === JSON.stringify(nextProps);
+    return isEqual(prevProps, nextProps);
 };
 
 export default function App() {
