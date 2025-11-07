@@ -1,42 +1,36 @@
 import { useState, useEffect } from 'react';
-
-interface Product {
-    category: string;
-    price: string;
-    stocked: boolean;
-    name: string;
-}
-
-const fruits: Product[] = [
-    { category: "Fruits", price: "$1", stocked: true, name: "Apple" },
-    { category: "Fruits", price: "$1", stocked: true, name: "Dragonfruit" },
-    { category: "Fruits", price: "$2", stocked: false, name: "Passionfruit" },
-    { category: "Vegetables", price: "$2", stocked: true, name: "Spinach" },
-    { category: "Vegetables", price: "$4", stocked: false, name: "Pumpkin" },
-    { category: "Vegetables", price: "$1", stocked: true, name: "Peas" }
-]
+import { type Fruit } from "../context/types";
+import { useFruits } from "../context/FruitsContext";
 
 const Filter = () => {
     const [input, setInput] = useState("")
-    const [items, setItems] = useState<Product[] | null>(null)
+    const [items, setItems] = useState<Fruit[] | null>(null)
     const [inStockOnly, setInStockOnly] = useState(false);
+    const { fruits, setFruits } = useFruits();
 
     useEffect(() => {
-        let filtered: Product[] = [];
+        let filtered: Fruit[] = [];
         if (input === "") {
             filtered = [...fruits];
         } else {
-            filtered = fruits.filter((p: Product) => {
+            filtered = fruits.filter((p: Fruit) => {
                 const n = input.toLowerCase()
                 const h = p.name.toLowerCase()
                 return h.includes(n)
             })
         }
         if (inStockOnly) {
-            filtered = filtered.filter((p: Product) => p.stocked === inStockOnly)
+            filtered = filtered.filter((p: Fruit) => p.stocked === inStockOnly)
         }
         setItems([...filtered])
-    }, [input, inStockOnly])
+    }, [input, inStockOnly, fruits])
+
+    const handleAdd = () => {
+        setFruits([
+            ...fruits,
+            { id: 100, category: "Vegetables", price: "$100", stocked: true, name: "New Fruit" }
+        ]);
+    };
 
     return (
         <div>
@@ -47,6 +41,7 @@ const Filter = () => {
                     return <li key={index}>{item.name}</li>
                 })}
             </ul>
+            <button onClick={handleAdd}>Add</button>
         </div>
     );
 };

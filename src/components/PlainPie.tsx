@@ -25,9 +25,9 @@ const PlainPie = ({data, title}: CarSalesDataProps) => {
           outerRadius={90}
           label={(entry) => `${entry.name ?? ''}: ${entry.value?.toLocaleString() ?? 0}`}
         >
-          {data.map((_entry, index) => (
+          {data.map((entry, index) => (
             <Cell
-              key={`cell-${index}`}
+              key={entry.name}
               fill={["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#A28BFF", "#FF6E6E"][index % 6]}
             />
           ))}

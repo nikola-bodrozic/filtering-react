@@ -1,5 +1,6 @@
 import { memo } from "react";
 import isEqual from "lodash.isequal";
+import { FruitsProvider } from "./context/FruitsProvider";
 import PlainPie from "./components/PlainPie";
 import Filter from "./components/Filter";
 import "./App.css";
@@ -20,7 +21,9 @@ export default function App() {
       {/* pass array as prop */}
       <MemoPie data={sales2024} title="Car Sales by Manufacturer" />
       <hr />
-      <Filter />
+      <FruitsProvider>
+        <Filter />
+      </FruitsProvider>
       <hr />
       <AdvancedFilter />
       <hr />
