@@ -18,11 +18,11 @@ export default function App() {
   const MemoPie = memo(PlainPie, deepCompare);
   return (
     <div style={{ textAlign: "center" }}>
-      {/* pass array as prop */}
-      <MemoPie data={sales2024} title="Car Sales by Manufacturer" />
-      <hr />
       <FruitsProvider>
-        <Filter />
+          {/* pass array as prop */}
+          <MemoPie data={sales2024} title="Car Sales by Manufacturer" />
+          <hr />
+          <Filter />
       </FruitsProvider>
       <hr />
       <AdvancedFilter />

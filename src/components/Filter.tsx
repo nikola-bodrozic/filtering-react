@@ -32,18 +32,34 @@ const Filter = () => {
         ]);
     };
 
-    return (
-        <div>
-            <input type="text" value={input} name="txtInput" onChange={(e) => { setInput(e.target.value) }} />
-            <input type="checkbox" checked={inStockOnly} onChange={(e) => setInStockOnly(e.target.checked)} />in stock
-            <ul>
-                {items?.map((item, index) => {
-                    return <li key={index}>{item.name}</li>
-                })}
-            </ul>
-            <button onClick={handleAdd}>Add</button>
-        </div>
-    );
+  return (
+    <div style={{ border: "3px dotted black", padding: "1em" }}>
+      {!fruits || fruits.length === 0 ? (
+        <div>Loading...</div>
+      ) : (
+        <>
+          <input
+            type="text"
+            value={input}
+            name="txtInput"
+            onChange={(e) => setInput(e.target.value)}
+          />
+          <input
+            type="checkbox"
+            checked={inStockOnly}
+            onChange={(e) => setInStockOnly(e.target.checked)}
+          />
+          in stock
+          <ul>
+            {items?.map((item, index) => (
+              <li key={index}>{item.name}</li>
+            ))}
+          </ul>
+          <button onClick={handleAdd}>Add</button>
+        </>
+      )}
+    </div>
+  );
 };
 
 export default Filter;
