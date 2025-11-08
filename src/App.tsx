@@ -8,6 +8,9 @@ import { sales2024 } from "./components/values";
 import AdvancedFilter from "./components/AdvancedFilter";
 import MultiFilter from "./components/MultiFilter";
 import TwoInputFields from "./components/TwoInputFields";
+import { UserProvider } from "./context/UserProvider";
+import { UserForm } from "./components/UserForm";
+import { UserList } from "./components/UserList";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const deepCompare = (prevProps: any, nextProps: any) => {
@@ -30,6 +33,14 @@ export default function App() {
       <MultiFilter />
       <hr />
       <TwoInputFields />
+      <hr />
+      <UserProvider>
+        <div style={{ border: "3px dotted black", padding: "1em" }}>
+          <h2>Context + Reducer: Array of Objects Example</h2>
+          <UserForm />
+          <UserList />
+        </div>
+      </UserProvider>
     </div>
   );
 }
