@@ -1,15 +1,20 @@
-import { UserItem } from "../UserItem";
+import React from "react";
 import { useUsers } from "../context/UserProvider";
 
 export const UserList: React.FC = () => {
-  const { state } = useUsers();
+  const { state, removeUser } = useUsers();
+
+  if (state.loading) return <p>Loading users...</p>;
+  if (state.error) return <p style={{ color: "red" }}>{state.error}</p>;
+
   return (
-    <div>
-      {state.users.length === 0 ? (
-        <p>No users yet.</p>
-      ) : (
-        state.users.map((user) => <UserItem key={user.id} user={user} />)
-      )}
-    </div>
+    <ul>
+      {state.users.map(u => (
+        <li key={u.id}>
+          {u.name} ({u.email}){" "}
+          <button onClick={() => removeUser(u.id)}>Delete</button>
+        </li>
+      ))}
+    </ul>
   );
 };
