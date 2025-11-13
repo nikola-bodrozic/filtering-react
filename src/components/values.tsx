@@ -24,3 +24,11 @@ export const cars: Array<Car> = [
   { id: 6, company: 'BMW', model: 'X3', price: '$42000', available: true },
   { id: 7, company: 'Toyota', model: 'Camry', price: '$28000', available: true },
 ];
+
+export interface User {
+  name: string;
+  profile: {
+      city: string;
+      profession: string;
+  };
+}

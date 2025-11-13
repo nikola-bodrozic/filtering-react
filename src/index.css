@@ -66,3 +66,34 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+/* index.css */
+
+/* Styles for the header row */
+.headerStyle {
+  border: 1px solid #ddd;
+  padding: 12px;
+  text-align: left;
+  font-weight: bold;
+}
+
+/* Styles for the cells */
+.cellStyle {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+/* Styles for the rows */
+.rowStyle {
+  border-bottom: 1px solid #eee;
+}
+
+/* Styles for the edit button */
+.editButtonStyle {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
