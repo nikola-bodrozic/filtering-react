@@ -12,7 +12,7 @@ export interface CarSalesDataProps {
 }
 
 //recevive object as prop in Child
-const PlainPie = ({data, title}: CarSalesDataProps) => {
+const PlainPie = ({ data, title }: CarSalesDataProps) => {
   const { fruits } = useFruits();
   console.log(new Date().toISOString(), JSON.stringify(fruits));
 
@@ -39,9 +39,32 @@ const PlainPie = ({data, title}: CarSalesDataProps) => {
         <Tooltip formatter={(value: number) => value.toLocaleString()} />
         <Legend />
       </PieChart>
-      <p>{JSON.stringify(fruits)}</p>
+      <table className="fruit-table">
+        <thead>
+          <tr className="table-header">
+            <th>ID</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Price</th>
+            <th>Stocked</th>
+          </tr>
+        </thead>
+        <tbody>
+          {fruits.map(fruit => (
+            <tr key={fruit.id} className="table-row">
+              <td>{fruit.id}</td>
+              <td>{fruit.name}</td>
+              <td>{fruit.category}</td>
+              <td>{fruit.price}</td>
+              <td className={fruit.stocked ? 'in-stock' : 'out-of-stock'}>
+                {fruit.stocked ? 'Yes' : 'No'}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
 
-export default PlainPie ;
+export default PlainPie;
