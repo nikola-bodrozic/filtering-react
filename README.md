@@ -7,8 +7,9 @@ A modern React dashboard built with TypeScript and Vite, featuring data visualiz
 - **Interactive Pie Charts** - Car sales visualization using Recharts
 - **Advanced Filtering** - Multi-criteria car search by make and model
 - **Real-time Search** - Instant filtering with checkboxes and dropdowns
-- **TypeScript** - Full type safety and better developer experience
 - **Performance Optimized** - Memoized components and efficient rendering
+- **Context API** - Global state management
+- **Playwright** - End-to-end testing
 
 ## 🛠 Tech Stack
 
@@ -21,13 +22,13 @@ A modern React dashboard built with TypeScript and Vite, featuring data visualiz
 
 ```bash
 # Install dependencies
-npm install
+yarn
 
 # Start development server
-npm run dev
+yarn dev
 
-# Build for production
-npm run build
+# Run tests 
+yarn test:e2e:headed
+yarn test:e2e
 
-# Lint code
-npm run lint
+
