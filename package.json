@@ -12,6 +12,7 @@
     "test:e2e:headed": "playwright test --headed"
   },
   "dependencies": {
+    "@react-google-maps/api": "^2.20.8",
     "axios": "^1.13.2",
     "lodash.isequal": "^4.5.0",
     "react": "^19.1.1",

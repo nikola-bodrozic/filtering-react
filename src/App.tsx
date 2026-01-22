@@ -12,6 +12,7 @@ import { UserProvider } from "./context/UserProvider";
 import { UserForm } from "./components/UserForm";
 import { UserList } from "./components/UserList";
 import UsersGrid from "./components/UsersGrid";
+import FilterMap from "./components/FilterMap";
 import { type User } from "./components/values";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -55,6 +56,7 @@ export default function App() {
         <hr />
         <Filter />
       </FruitsProvider>
+      <FilterMap />
       <hr />
       <AdvancedFilter />
       <hr />
