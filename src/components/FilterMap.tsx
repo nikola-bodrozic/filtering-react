@@ -4,6 +4,7 @@ import React, {
   useMemo,
   useState,
   startTransition,
+  useEffect,
 } from "react";
 import {
   GoogleMap,
@@ -20,6 +21,7 @@ const FilterMap: React.FC = () => {
   const movingMarkerRef = useRef<google.maps.Marker | null>(null);
   const routeIndexRef = useRef(0);
   const arrivalTriggeredRef = useRef(false);
+  const arrivalTimerRef = useRef<number | null>(null);
 
   /* ======================= STATE ======================= */
   const [directions, setDirections] =
@@ -86,12 +88,27 @@ const FilterMap: React.FC = () => {
       // Trigger arrival popup at last point
       if (i === path.length - 1 && !arrivalTriggeredRef.current) {
         arrivalTriggeredRef.current = true;
-        startTransition(() => setShowArrivalPopup(true));
+        startTransition(() => {
+          setShowArrivalPopup(true);
+          arrivalTimerRef.current = setTimeout(
+            () => setShowArrivalPopup(false),
+            4000,
+          );
+        });
       }
 
       await sleep(300); // speed: 300ms per point
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (arrivalTimerRef.current) {
+        clearTimeout(arrivalTimerRef.current);
+        arrivalTimerRef.current = null;
+      }
+    };
+  }, []);
 
   const onMapLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
@@ -104,8 +121,6 @@ const FilterMap: React.FC = () => {
 
         // Start movement only after path is ready
         await moveMarkerAlongPath(path);
-        await sleep(4000);
-        setShowArrivalPopup(false);
       } catch (error) {
         console.error("Directions error:", error);
         setDirectionsError(String(error));
