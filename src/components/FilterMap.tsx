@@ -373,8 +373,6 @@ const FilterMap: React.FC = () => {
           </div>
         )}
       </div>
-
-      {/* Cleanup interval when component unmounts (handled by useEffect above) */}
     </>
   );
 };

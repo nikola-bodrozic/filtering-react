@@ -9,6 +9,7 @@ A modern React dashboard built with TypeScript and Vite, featuring data visualiz
 - **Real-time Search** - Instant filtering with checkboxes and dropdowns
 - **Performance Optimized** - Memoized components and efficient rendering
 - **Context API** - Global state management
+- **Google Map** - with 2 markers and moving pin, when the pin arrives to destination a pop-up on map shows 
 - **Playwright** - End-to-end testing
 
 ## 🛠 Tech Stack
@@ -16,6 +17,7 @@ A modern React dashboard built with TypeScript and Vite, featuring data visualiz
 - React 19 + TypeScript
 - Vite (Build tool)
 - Recharts (Data visualization)
+- Google Maps
 - ESLint (Code quality)
 
 ## 📦 Quick Start
