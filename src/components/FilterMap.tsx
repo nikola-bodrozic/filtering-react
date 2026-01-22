@@ -2,7 +2,6 @@ import React, {
   useCallback,
   useRef,
   useMemo,
-  useEffect,
   useState,
   startTransition,
 } from "react";
@@ -16,16 +15,13 @@ import {
 const FilterMap: React.FC = () => {
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
-  /* ======================= REFS (NO RERENDERS) ======================= */
+  /* ======================= REFS ======================= */
   const mapRef = useRef<google.maps.Map | null>(null);
   const movingMarkerRef = useRef<google.maps.Marker | null>(null);
-
-  const intervalRef = useRef<number | null>(null);
-  const routePathRef = useRef<google.maps.LatLng[]>([]);
   const routeIndexRef = useRef(0);
   const arrivalTriggeredRef = useRef(false);
 
-  /* ======================= STATE (UI ONLY) ======================= */
+  /* ======================= STATE ======================= */
   const [directions, setDirections] =
     useState<google.maps.DirectionsResult | null>(null);
   const [directionsError, setDirectionsError] = useState<string | null>(null);
@@ -37,14 +33,8 @@ const FilterMap: React.FC = () => {
     lng: 14.4295,
     name: "Ultimate Frisbee Store",
   };
+  const cafeTvaroh = { lat: 50.0878, lng: 14.4212, name: "Café Tvaroh" };
 
-  const cafeTvaroh = {
-    lat: 50.0878,
-    lng: 14.4212,
-    name: "Café Tvaroh",
-  };
-
-  /* ======================= MEMOS ======================= */
   const mapCenter = useMemo(
     () => ({
       lat: (ultimateFrisbeeStore.lat + cafeTvaroh.lat) / 2,
@@ -65,75 +55,62 @@ const FilterMap: React.FC = () => {
     [],
   );
 
-  /* ======================= ROUTE MOVEMENT ======================= */
-  const startMovement = () => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
+  /* ======================= HELPERS ======================= */
+  const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
-    routeIndexRef.current = 0;
-    arrivalTriggeredRef.current = false;
-
-    intervalRef.current = window.setInterval(() => {
-      const path = routePathRef.current;
-      const i = routeIndexRef.current;
-
-      if (!path.length || !movingMarkerRef.current) return;
-
-      // reached destination
-      if (i >= path.length - 1) {
-        clearInterval(intervalRef.current!);
-        intervalRef.current = null;
-
-        startTransition(() => {
-          setShowArrivalPopup(true);
-        });
-        return;
-      }
-
-      // move marker along route
-      movingMarkerRef.current.setPosition(path[i]);
-      routeIndexRef.current += 1;
-    }, 300); // adjust speed here
+  const getDirections = async (
+    origin: google.maps.LatLngLiteral,
+    destination: google.maps.LatLngLiteral,
+  ): Promise<google.maps.DirectionsResult> => {
+    return new Promise((resolve, reject) => {
+      const ds = new google.maps.DirectionsService();
+      ds.route(
+        { origin, destination, travelMode: google.maps.TravelMode.WALKING },
+        (result, status) => {
+          if (status === "OK" && result) resolve(result);
+          else reject(status);
+        },
+      );
+    });
   };
 
-  /* ======================= MAP LOAD ======================= */
+  const moveMarkerAlongPath = async (path: google.maps.LatLng[]) => {
+    if (!movingMarkerRef.current || path.length === 0) return;
+
+    arrivalTriggeredRef.current = false;
+
+    for (let i = 0; i < path.length; i++) {
+      movingMarkerRef.current.setPosition(path[i]);
+      routeIndexRef.current = i;
+
+      // Trigger arrival popup at last point
+      if (i === path.length - 1 && !arrivalTriggeredRef.current) {
+        arrivalTriggeredRef.current = true;
+        startTransition(() => setShowArrivalPopup(true));
+      }
+
+      await sleep(300); // speed: 300ms per point
+    }
+  };
+
   const onMapLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
-
-    const ds = new google.maps.DirectionsService();
-    ds.route(
-      {
-        origin: ultimateFrisbeeStore,
-        destination: cafeTvaroh,
-        travelMode: google.maps.TravelMode.WALKING,
-      },
-      (result, status) => {
-        if (status !== "OK" || !result) {
-          setDirectionsError(status);
-          return;
-        }
-
+    (async () => {
+      try {
+        const result = await getDirections(ultimateFrisbeeStore, cafeTvaroh);
         setDirections(result);
 
-        // 🔥 Extract route geometry
-        const route = result.routes[0];
-        const path: google.maps.LatLng[] = [];
+        const path: google.maps.LatLng[] = result.routes[0].overview_path;
 
-        route.legs[0].steps.forEach((step) => {
-          step.path.forEach((point) => path.push(point));
-        });
-
-        routePathRef.current = path;
-
-        startMovement();
-      },
-    );
-  }, []);
-
-  /* ======================= CLEANUP ======================= */
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
+        // Start movement only after path is ready
+        await moveMarkerAlongPath(path);
+        await sleep(4000);
+        setShowArrivalPopup(false);
+      } catch (error) {
+        console.error("Directions error:", error);
+        setDirectionsError(String(error));
+      }
+    })();
   }, []);
 
   /* ======================= RENDER ======================= */
@@ -163,7 +140,7 @@ const FilterMap: React.FC = () => {
             />
           )}
 
-          {/* Moving marker (renders ONCE) */}
+          {/* Moving marker */}
           <Marker
             onLoad={(marker) => (movingMarkerRef.current = marker)}
             position={ultimateFrisbeeStore}
@@ -190,9 +167,7 @@ const FilterMap: React.FC = () => {
           }}
         >
           <strong>Arrived</strong>
-          <div style={{ fontSize: 12, marginTop: 4 }}>
-            Destination reached
-          </div>
+          <div style={{ fontSize: 12, marginTop: 4 }}>Destination reached</div>
           <div style={{ marginTop: 8, textAlign: "right" }}>
             <button
               onClick={() => setShowArrivalPopup(false)}
