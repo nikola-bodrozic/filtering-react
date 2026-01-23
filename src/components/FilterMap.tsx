@@ -1,49 +1,20 @@
-import React, {
-  useCallback,
-  useRef,
-  useMemo,
-  useEffect,
-  useState,
-} from "react";
-import {
-  GoogleMap,
-  LoadScript,
-  Marker,
-  DirectionsRenderer,
-} from "@react-google-maps/api";
+import React, { useCallback, useRef, useMemo, useState, useEffect } from "react";
+import { GoogleMap, LoadScript, DirectionsRenderer, Marker } from "@react-google-maps/api";
 
-const GOOGLE_MAP_LIBRARIES: "places"[] = ["places"];
+const GOOGLE_MAP_LIBRARIES: ("places" | "geometry")[] = ["places", "geometry"];
 
 const FilterMap: React.FC = () => {
-  const mapStyles = { height: "80vh", width: "100%" };
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-  const renderCount = useRef<number>(0);
-  const [directions, setDirections] =
-    useState<google.maps.DirectionsResult | null>(null);
-
-  useEffect(() => {
-    renderCount.current += 1;
-    console.log(
-      `[TrackMap committed render #${renderCount.current}]`,
-      performance.now().toFixed(2),
-      "ms",
-    );
-  });
-
   const mapRef = useRef<google.maps.Map | null>(null);
+  const movingMarkerRef = useRef<google.maps.Marker | null>(null);
+  const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
+  const [showArrivalPopup, setShowArrivalPopup] = useState(false);
+  // Map container style
+  const mapStyles = { height: "80vh", width: "100%" };
 
-  // Coordinates
-  const ultimateFrisbeeStore = {
-    lat: 50.0796,
-    lng: 14.4295,
-    name: "Ultimate Frisbee Store",
-  };
-
-  const cafeTvaroh = {
-    lat: 50.0878,
-    lng: 14.4212,
-    name: "Café Tvaroh",
-  };
+  // Start / End coordinates
+  const ultimateFrisbeeStore = { lat: 50.0796, lng: 14.4295 };
+  const cafeTvaroh = { lat: 50.0878, lng: 14.4212 };
 
   // Map center
   const mapCenter = useMemo(
@@ -51,7 +22,7 @@ const FilterMap: React.FC = () => {
       lat: (ultimateFrisbeeStore.lat + cafeTvaroh.lat) / 2,
       lng: (ultimateFrisbeeStore.lng + cafeTvaroh.lng) / 2,
     }),
-    [],
+    []
   );
 
   const mapOptions = useMemo(
@@ -65,9 +36,10 @@ const FilterMap: React.FC = () => {
       clickableIcons: false,
       keyboardShortcuts: false,
     }),
-    [],
+    []
   );
 
+  // Get directions
   const getDirections = async (): Promise<google.maps.DirectionsResult> => {
     return new Promise((resolve, reject) => {
       if (!window.google) return reject("Google Maps not loaded");
@@ -82,21 +54,80 @@ const FilterMap: React.FC = () => {
         (result, status) => {
           if (status === "OK" && result) resolve(result);
           else reject(status);
-        },
+        }
       );
     });
   };
 
- const onMapLoad = useCallback(async (map: google.maps.Map) => {
-  mapRef.current = map;
-  try {
-    const result = await getDirections(); // ✅ await here
-    setDirections(result);
-  } catch (error) {
-    console.log(String(error));
-  }
-}, []);
+  // Extract path for animation
+  const extractPath = (result: google.maps.DirectionsResult, stepSize = 20) => {
+    const route = result.routes[0];
+    const path: google.maps.LatLngLiteral[] = [];
 
+    route.legs.forEach((leg) => {
+      leg.steps.forEach((step) => {
+        step.path.forEach((p, index) => {
+          if (index % stepSize === 0) {
+            path.push({ lat: p.lat(), lng: p.lng() });
+          }
+        });
+      });
+    });
+
+    return path;
+  };
+
+  // Animate marker imperatively
+  const animateMarker = (path: google.maps.LatLngLiteral[], speed = 60) => {
+    let index = 0;
+
+    const move = () => {
+      if (!movingMarkerRef.current || index >= path.length) {
+        setShowArrivalPopup(true);
+        return;
+      }
+      movingMarkerRef.current.setPosition(path[index]);
+      index++;
+      setTimeout(() => requestAnimationFrame(move), speed); // control speed here
+    };
+
+    move();
+  };
+
+  // On map load
+  const onMapLoad = useCallback(async (map: google.maps.Map) => {
+    mapRef.current = map;
+
+    // Create moving marker only once
+    if (!movingMarkerRef.current) {
+      movingMarkerRef.current = new google.maps.Marker({
+        map,
+        position: ultimateFrisbeeStore,
+        icon: {
+          url: "https://maps.google.com/mapfiles/ms/icons/green-dot.png",
+          scaledSize: new google.maps.Size(40, 40),
+        },
+        zIndex: 9999,
+      });
+    }
+
+    try {
+      const result = await getDirections();
+      setDirections(result);
+
+      const path = extractPath(result);
+      animateMarker(path, 80); // adjust speed in ms per step
+    } catch (err) {
+      console.error("Directions error:", err);
+    }
+  }, []);
+
+  // auto-hide arrival popup after 4 seconds
+  useEffect(() => {
+    if (!showArrivalPopup) return;
+    const t = window.setTimeout(() => setShowArrivalPopup(false), 4000);
+    return () => clearTimeout(t);
+  }, [showArrivalPopup]);
 
   if (!apiKey) {
     return (
@@ -120,69 +151,70 @@ const FilterMap: React.FC = () => {
   }
 
   return (
-    <>
-      <div
-        style={{
-          position: "relative",
-          height: "80vh",
-          overflow: "hidden",
-          marginTop: "50px",
-        }}
-      >
-        <LoadScript
-          googleMapsApiKey={apiKey}
-          loadingElement={
-            <div
+    <div style={{ position: "relative", height: "80vh", marginTop: "50px" }}>
+      <LoadScript googleMapsApiKey={apiKey} libraries={GOOGLE_MAP_LIBRARIES}>
+        <GoogleMap
+          mapContainerStyle={mapStyles}
+          zoom={14}
+          center={mapCenter}
+          options={mapOptions}
+          onLoad={onMapLoad}
+        >
+          {/* Static markers */}
+          <Marker
+            position={ultimateFrisbeeStore}
+            title={"ultimateFrisbeeStore"}
+            icon={{ url: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png" }}
+          />
+          <Marker
+            position={cafeTvaroh}
+            title={"cafeTvaroh"}
+            icon={{ url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png" }}
+          />
+          {/* moving green marker */}
+          {directions && (
+            <DirectionsRenderer
+              directions={directions}
+              options={{ suppressMarkers: true }}
+            />
+          )}
+        </GoogleMap>
+      </LoadScript>
+      {/* Arrival popup */}
+      {showArrivalPopup && (
+        <div
+          id="arrival"
+          style={{
+            position: "absolute",
+            top: 10,
+            left: 10,
+            background: "#1976D2",
+            color: "white",
+            padding: "10px 14px",
+            borderRadius: 6,
+            boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+          }}
+        >
+          <strong>Arrived</strong>
+          <div style={{ fontSize: 12, marginTop: 4 }}>Destination reached</div>
+          <div style={{ marginTop: 8, textAlign: "right" }}>
+            <button
+              onClick={() => setShowArrivalPopup(false)}
               style={{
-                height: "100vh",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                fontSize: "18px",
-                color: "#666",
+                background: "transparent",
+                border: "1px solid rgba(255,255,255,0.5)",
+                color: "white",
+                padding: "4px 8px",
+                borderRadius: 4,
+                cursor: "pointer",
               }}
             >
-              Loading Prague Map...
-            </div>
-          }
-          onError={(error) =>
-            console.error("Error loading Google Maps:", error)
-          }
-          libraries={GOOGLE_MAP_LIBRARIES}
-        >
-          <GoogleMap
-            mapContainerStyle={mapStyles}
-            zoom={14}
-            center={mapCenter}
-            options={mapOptions}
-            onLoad={onMapLoad}
-          >
-            {/* Markers */}
-            <Marker
-              position={ultimateFrisbeeStore}
-              title={ultimateFrisbeeStore.name}
-              icon={{
-                url: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
-              }}
-            />
-            <Marker
-              position={cafeTvaroh}
-              title={cafeTvaroh.name}
-              icon={{
-                url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
-              }}
-            />
-            {/* Directions route */}
-            {directions && (
-              <DirectionsRenderer
-                directions={directions}
-                options={{ suppressMarkers: true }}
-              />
-            )}
-          </GoogleMap>
-        </LoadScript>
-      </div>
-    </>
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
