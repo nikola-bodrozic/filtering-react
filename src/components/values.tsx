@@ -27,6 +27,7 @@ export const cars: Array<Car> = [
 
 export interface User {
   name: string;
+  id: number;
   profile: {
       city: string;
       profession: string;

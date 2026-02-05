@@ -1,4 +1,5 @@
 interface RowData {
+  id: number;
   name: string;
   profile: {
     city: string;
@@ -34,14 +35,14 @@ const UsersGrid = ({ data, onEdit }: UsersGridProps) => {
           </tr>
         </thead>
         <tbody>
-          {data.map((user, index) => (
-            <tr key={index} className='rowStyle'>
+          {data.map((user) => (
+            <tr key={user.id} className='rowStyle'>
               <td className='cellStyle'>{user.name}</td>
               <td className='cellStyle'>{user.profile.city}</td>
               <td className='cellStyle'>{user.profile.profession}</td>
               <td className='cellStyle'>
                 {/* Edit button passes params to parent */}
-                <button onClick={() => onEdit(user, index)}>
+                <button onClick={() => onEdit(user, user.id)}>
                   Edit
                 </button>
               </td>
