@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo, useState, useEffect } from "react";
 import { cloneDeep, isEqual } from 'lodash';
 import { FruitsProvider } from "./context/FruitsProvider";
 import PlainPie from "./components/PlainPie";
@@ -14,6 +14,8 @@ import { UserList } from "./components/UserList";
 import UsersGrid from "./components/UsersGrid";
 import FilterMap from "./components/FilterMap";
 import { type User } from "./components/values";
+import ProductCard from './components/ProductCard';
+import axios from "axios";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const deepCompare = (prevProps: any, nextProps: any) => {
@@ -27,6 +29,8 @@ export default function App() {
     { id: 3, name: 'Charlie', profile: { city: 'New York', profession: 'Teacher' } },
     { id: 4, name: 'Diana', profile: { city: 'Tokyo', profession: 'Developer' } },
   ]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [data, setData] = useState<any>(null);
 
   const MemoPie = memo(PlainPie, deepCompare);
 
@@ -43,9 +47,38 @@ export default function App() {
     }
     setUsers(clonedUsers);
   };
+  useEffect(() => {
+    // Create AbortController
+    const controller = new AbortController();
+
+    const fetchData = async () => {
+      try {
+        const response = await axios.get('https://test.nikolabodr.com/get.php', {
+          signal: controller.signal
+        });
+        console.log(response.data)
+        setData(response.data[0]);
+        // const {title, description, price} = response.data[0]
+      } catch (error) {
+        if (axios.isCancel(error)) {
+          if(error.message) console.log('Request canceled:', error.message);
+        } else {
+          console.error('API Error:', error);
+        }
+      } 
+    };
+
+    fetchData();
+
+    return () => {
+      controller.abort();
+    };
+  }, []);
 
   return (
     <div style={{ textAlign: "center" }}>
+      {JSON.stringify(data)}
+      {data && (<ProductCard title={"data.name"} description={data.description} price={30} onAddToCart={() => { alert("add to cart") }} />)}
       {/* pass array and function as prop */}
       <UsersGrid data={users} onEdit={handleEdit} />
       <FruitsProvider>
