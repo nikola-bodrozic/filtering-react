@@ -1,15 +1,16 @@
-interface RowData {
-  id: number;
-  name: string;
-  profile: {
-    city: string;
-    profession: string;
-  };
-}
+import { type User } from "./values";
+// export interface RowData {
+//   id: number;
+//   name: string;
+//   profile: {
+//     city: string;
+//     profession: string;
+//   };
+// }
 
 interface UsersGridProps {
-  data: RowData[];
-  onEdit: (item: RowData, index: number) => void;
+  data: User[];
+  onEdit: (item: User, id: number) => void;
 }
 
 const UsersGrid = ({ data, onEdit }: UsersGridProps) => {

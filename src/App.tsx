@@ -1,5 +1,5 @@
 import { memo, useState } from "react";
-import isEqual from "lodash.isequal";
+import { cloneDeep, isEqual } from 'lodash';
 import { FruitsProvider } from "./context/FruitsProvider";
 import PlainPie from "./components/PlainPie";
 import Filter from "./components/Filter";
@@ -16,12 +16,12 @@ import FilterMap from "./components/FilterMap";
 import { type User } from "./components/values";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const deepCompare = (prevProps: any, nextProps: any) => { 
+const deepCompare = (prevProps: any, nextProps: any) => {
   return isEqual(prevProps, nextProps);
 };
 
 export default function App() {
-  const [users, setUsers] = useState<User[]> ([
+  const [users, setUsers] = useState<User[]>([
     { id: 1, name: 'Alice', profile: { city: 'Paris', profession: 'Engineer' } },
     { id: 2, name: 'Bob', profile: { city: 'London', profession: 'Designer' } },
     { id: 3, name: 'Charlie', profile: { city: 'New York', profession: 'Teacher' } },
@@ -31,16 +31,17 @@ export default function App() {
   const MemoPie = memo(PlainPie, deepCompare);
 
   const handleEdit = (user: User, id: number) => {
-    console.log(`Editing user id ${id}: ${JSON.stringify(user)}`);
-    const newName = prompt("modify name") as string;
-    const newUsers = users.map((el) => {
-      if (el.id === id) {
-        return { ...el, name: newName }
-      } else {
-        return el
-      }
-    })
-    setUsers(newUsers)
+    const newName = prompt("Modify name", user.name);
+    const newCity = prompt("Modify city", user.profile.city);
+    if (newName === null || newCity === null) return;
+
+    const clonedUsers = cloneDeep(users);
+    const found = clonedUsers.find((user: User) => user.id === id);
+    if (found) {
+      found.name = newName;
+      found.profile.city = newCity;
+    }
+    setUsers(clonedUsers);
   };
 
   return (
