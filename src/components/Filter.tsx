@@ -1,64 +1,31 @@
-import { useState, useEffect } from 'react';
-import { type Fruit } from "../context/types";
 import { useFruits } from "../context/FruitsContext";
+const apartments = [
+  { id: 1, category: "Studio", price: "$1200", stocked: true, name: "Maple Heights" },
+  { id: 2, category: "1 Bedroom", price: "$1500", stocked: true, name: "Cedar Lofts" },
+  { id: 3, category: "2 Bedroom", price: "$2200", stocked: false, name: "Willow Residences" },
+  { id: 4, category: "1 Bedroom", price: "$1600", stocked: true, name: "Oak Commons" },
+  { id: 5, category: "3 Bedroom", price: "$3000", stocked: false, name: "Pine Towers" },
+  { id: 6, category: "Studio", price: "$1100", stocked: true, name: "Birch Gardens" }
+];
 
 const Filter = () => {
-    const [input, setInput] = useState("")
-    const [items, setItems] = useState<Fruit[] | null>(null)
-    const [inStockOnly, setInStockOnly] = useState(false);
-    const { fruits, setFruits } = useFruits();
+  const { fruits, setFruits } = useFruits();
+  const handleAdd = () => {
+    setFruits(prev => [...prev, { "id": 115, "category": "Vegetables", "price": "$4", "stocked": false, "name": "Pumpkin" }])
+  };
 
-    useEffect(() => {
-        let filtered: Fruit[] = [];
-        if (input === "") {
-            filtered = [...fruits];
-        } else {
-            filtered = fruits.filter((p: Fruit) => {
-                const n = input.toLowerCase()
-                const h = p.name.toLowerCase()
-                return h.includes(n)
-            })
-        }
-        if (inStockOnly) {
-            filtered = filtered.filter((p: Fruit) => p.stocked === inStockOnly)
-        }
-        setItems([...filtered])
-    }, [input, inStockOnly, fruits])
-
-    const handleAdd = () => {
-        setFruits([
-            ...fruits,
-            { id: 100, category: "Vegetables", price: "$100", stocked: true, name: "New Fruit" }
-        ]);
-    };
-
-    console.log("Filter",new Date().toISOString(), JSON.stringify(fruits[0]));
+  console.log("Filter", new Date().toISOString(), JSON.stringify(fruits[0]));
   return (
     <div style={{ border: "3px dotted black", padding: "1em" }}>
-      {!fruits || fruits.length === 0 ? (
-        <div>Loading...</div>
-      ) : (
-        <>
-          <input
-            type="text"
-            value={input}
-            name="txtInput"
-            onChange={(e) => setInput(e.target.value)}
-          />
-          <input
-            type="checkbox"
-            checked={inStockOnly}
-            onChange={(e) => setInStockOnly(e.target.checked)}
-          />
-          in stock
-          <ul>
-            {items?.map((item, index) => (
-              <li key={index}>{item.name}</li>
-            ))}
-          </ul>
-          <button onClick={handleAdd}>Add</button>
-        </>
-      )}
+      <>
+        From context: {JSON.stringify(fruits)}
+        <ul>
+          {apartments?.map((item, index) => (
+            <li key={index}>{item.name} - {item.category}</li>
+          ))}
+        </ul>
+        <button onClick={handleAdd}>Add</button>
+      </>
     </div>
   );
 };

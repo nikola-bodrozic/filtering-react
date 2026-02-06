@@ -12,7 +12,7 @@ import { UserProvider } from "./context/UserProvider";
 import { UserForm } from "./components/UserForm";
 import { UserList } from "./components/UserList";
 import UsersGrid from "./components/UsersGrid";
-// import FilterMap from "./components/FilterMap";
+import FilterMap from "./components/FilterMap";
 import { type User } from "./components/values";
 import ProductCard from "./components/ProductCard";
 import axios from "axios";
@@ -21,6 +21,9 @@ import axios from "axios";
 const deepCompare = (prevProps: any, nextProps: any) => {
   return isEqual(prevProps, nextProps);
 };
+
+const MemoPie = memo(PlainPie, deepCompare);
+const MemoFilter = memo(Filter)
 
 export default function App() {
   const [users, setUsers] = useState<User[]>([
@@ -39,7 +42,6 @@ export default function App() {
     profession: ''
   });
 
-  const MemoPie = memo(PlainPie, deepCompare);
 
   const handleEdit = (user: User, id: number) => {
     setEditingUser(user);
@@ -68,11 +70,11 @@ export default function App() {
 
   const handleFormSubmit = (e: FormEvent) => {
     e.preventDefault();
-    
+
     // Log form values
     console.log('Form submitted with values:', formData);
     console.log('Editing user ID:', editingUser?.id);
-    
+
     if (!editingUser) return;
 
     // Update the user
@@ -84,13 +86,13 @@ export default function App() {
       found.profile.profession = formData.profession;
     }
     setUsers(clonedUsers);
-    
+
     // Show confirmation alert
     alert(`User updated:
 Name: ${formData.name}
 City: ${formData.city}
 Profession: ${formData.profession}`);
-    
+
     handleCloseOverlay();
   };
 
@@ -149,7 +151,7 @@ Profession: ${formData.profession}`);
             boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
           }}>
             <h3>Edit User (ID: {editingUser?.id})</h3>
-            
+
             <form onSubmit={handleFormSubmit}>
               <div style={{ marginBottom: '15px', textAlign: 'left' }}>
                 <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
@@ -170,7 +172,7 @@ Profession: ${formData.profession}`);
                   required
                 />
               </div>
-              
+
               <div style={{ marginBottom: '15px', textAlign: 'left' }}>
                 <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
                   City:
@@ -190,7 +192,7 @@ Profession: ${formData.profession}`);
                   required
                 />
               </div>
-              
+
               <div style={{ marginBottom: '20px', textAlign: 'left' }}>
                 <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
                   Profession:
@@ -210,7 +212,7 @@ Profession: ${formData.profession}`);
                   required
                 />
               </div>
-              
+
               <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
                 <button
                   type="submit"
@@ -227,7 +229,7 @@ Profession: ${formData.profession}`);
                 >
                   Save Changes
                 </button>
-                
+
                 <button
                   type="button"
                   onClick={handleCloseOverlay}
@@ -249,7 +251,7 @@ Profession: ${formData.profession}`);
           </div>
         </div>
       )}
-      
+
       {/* pass array and function as prop */}
       <UsersGrid data={users} onEdit={handleEdit} />
 
@@ -257,9 +259,9 @@ Profession: ${formData.profession}`);
         {/* pass array as prop */}
         <MemoPie data={sales2024} title="Car Sales by Manufacturer" />
         <hr />
-        <Filter />
+        <MemoFilter />
       </FruitsProvider>
-      {/* <FilterMap /> */}
+      <FilterMap />
       <hr />
       <AdvancedFilter />
       <hr />

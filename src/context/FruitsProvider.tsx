@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { FruitsContext } from "./FruitsContext";
 import { type Fruit } from "./types";
 
@@ -11,8 +11,6 @@ export const FruitsProvider: React.FC<FruitsProviderProps> = ({ children }) => {
 
   useEffect(() => {
     const fetchFruits = () => {
-      // Fetch fruits from your API or any other source
-      // and set it to the state
       const fetchedFruits = [
         { id: 1, category: "Fruits", price: "$1", stocked: true, name: "Apple" },
         { id: 2, category: "Fruits", price: "$1", stocked: true, name: "Dragonfruit" },
@@ -24,11 +22,17 @@ export const FruitsProvider: React.FC<FruitsProviderProps> = ({ children }) => {
       setFruits(fetchedFruits);
     };
 
-    setTimeout(fetchFruits, 2000); // simulate a 2 second delay
+    setTimeout(fetchFruits, 2000);
   }, []);
 
+  // MEMOIZE the context value
+  const contextValue = useMemo(() => ({
+    fruits,
+    setFruits
+  }), [fruits]); // Only changes when fruits changes
+
   return (
-    <FruitsContext.Provider value={{ fruits, setFruits }}>
+    <FruitsContext.Provider value={contextValue}>
       {children}
     </FruitsContext.Provider>
   );
