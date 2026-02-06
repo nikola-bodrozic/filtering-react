@@ -1,4 +1,4 @@
-import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
+import { PieChart, Pie, Cell, Legend } from "recharts";
 import { useFruits } from "../context/FruitsContext";
 
 export interface ManufacturerData {
@@ -14,7 +14,8 @@ export interface CarSalesDataProps {
 //recevive object as prop in Child
 const PlainPie = ({ data, title }: CarSalesDataProps) => {
   const { fruits } = useFruits();
-  console.log(new Date().toISOString(), JSON.stringify(fruits));
+  
+  console.log("PlainPie",new Date().toISOString(), JSON.stringify(fruits[0]));
 
   return (
     <div style={{ border: "3px dotted black", padding: "1em" }}>
@@ -36,7 +37,6 @@ const PlainPie = ({ data, title }: CarSalesDataProps) => {
             />
           ))}
         </Pie>
-        <Tooltip formatter={(value: number) => value.toLocaleString()} />
         <Legend />
       </PieChart>
       <table className="fruit-table">

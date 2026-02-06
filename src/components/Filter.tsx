@@ -32,6 +32,7 @@ const Filter = () => {
         ]);
     };
 
+    console.log("Filter",new Date().toISOString(), JSON.stringify(fruits[0]));
   return (
     <div style={{ border: "3px dotted black", padding: "1em" }}>
       {!fruits || fruits.length === 0 ? (

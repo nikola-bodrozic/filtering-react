@@ -10,7 +10,7 @@ export const FruitsProvider: React.FC<FruitsProviderProps> = ({ children }) => {
   const [fruits, setFruits] = useState<Fruit[]>([]);
 
   useEffect(() => {
-    const fetchFruits = async () => {
+    const fetchFruits = () => {
       // Fetch fruits from your API or any other source
       // and set it to the state
       const fetchedFruits = [
