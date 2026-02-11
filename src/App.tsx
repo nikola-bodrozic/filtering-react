@@ -23,7 +23,7 @@ const MemoPie = memo(
     isEqual(prevProps, nextProps),
 );
 const MemoAddFruit = memo(AddFruit);
-const MemoRmFruit = memo(RemoveFruit)
+const MemoRmFruit = memo(RemoveFruit);
 
 export default function App() {
   const [visitor, setVisitor] = useState<User[]>([
@@ -92,7 +92,9 @@ export default function App() {
 
     // Update the user
     const clonedVisitors = cloneDeep(visitor);
-    const found = clonedVisitors.find((user: User) => user.id === editingVisitor.id);
+    const found = clonedVisitors.find(
+      (user: User) => user.id === editingVisitor.id,
+    );
     if (found) {
       found.name = formData.name;
       found.profile.city = formData.city;
@@ -124,8 +126,11 @@ Profession: ${formData.profession}`);
       <hr />
       <MemoPie data={sales2024} title="Car Sales by Manufacturer" />
       <FruitsProvider>
-        <MemoRmFruit />
-        <MemoAddFruit />
+        <div style={{ border: "3px dotted black", padding: "1em" }}>
+          <MemoRmFruit />
+          <hr />
+          <MemoAddFruit />
+        </div>
       </FruitsProvider>
       <FilterMap />
       <hr />
@@ -139,6 +144,7 @@ Profession: ${formData.profession}`);
         <div style={{ border: "3px dotted black", padding: "1em" }}>
           <h2>Context + Reducer: Array of Objects Example</h2>
           <UserForm />
+          <hr />
           <UserList />
         </div>
       </UserProvider>

@@ -9,7 +9,7 @@ const Filter = () => {
   };
 
   return (
-    <div style={{ border: "3px dotted black", padding: "1em" }}>
+    <div>
       <>
         <ul>
           {fruits?.map((fruit: Fruit) => (

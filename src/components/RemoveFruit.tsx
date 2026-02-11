@@ -13,7 +13,7 @@ const RemoveFruit = () => {
   };
 
   return (
-    <div style={{ border: "3px dotted black", padding: "1em" }}>
+    <div>
       <>
         <h3>Remove Fruits</h3>
         <p>Current fruits in context: {fruits.length} items</p>
