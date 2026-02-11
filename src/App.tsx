@@ -2,7 +2,8 @@ import { memo, useState, type SyntheticEvent } from "react";
 import { cloneDeep, isEqual } from "lodash";
 import { FruitsProvider } from "./context/FruitsProvider";
 import PlainPie, { type CarSalesDataProps } from "./components/PlainPie";
-import Filter from "./components/Filter";
+import AddFruit from "./components/AddFruit";
+import RemoveFruit from "./components/RemoveFruit";
 import "./App.css";
 import { sales2024 } from "./components/values";
 import AdvancedFilter from "./components/AdvancedFilter";
@@ -21,7 +22,7 @@ const MemoPie = memo(
   (prevProps: CarSalesDataProps, nextProps: CarSalesDataProps) =>
     isEqual(prevProps, nextProps),
 );
-const MemoFilter = memo(Filter);
+const MemoAddFruit = memo(AddFruit);
 
 export default function App() {
   const [users, setUsers] = useState<User[]>([
@@ -118,13 +119,12 @@ Profession: ${formData.profession}`);
           onInputChange={handleInputChange}
         />
       )}
-
       <UsersGrid data={users} onEdit={handleEdit} />
-
+      <hr />
+      <MemoPie data={sales2024} title="Car Sales by Manufacturer" />
       <FruitsProvider>
-        <MemoPie data={sales2024} title="Car Sales by Manufacturer" />
-        <hr />
-        <MemoFilter />
+        <RemoveFruit />
+        <MemoAddFruit />
       </FruitsProvider>
       <FilterMap />
       <hr />
