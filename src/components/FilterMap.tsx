@@ -1,5 +1,5 @@
-import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
-import { useEffect } from "react";
+import { GoogleMap, LoadScript, Marker, DirectionsRenderer } from "@react-google-maps/api";
+import { useEffect, useState, useRef } from "react";
 
 const GOOGLE_MAP_LIBRARIES: ("places" | "geometry")[] = ["places", "geometry"];
 
@@ -14,13 +14,40 @@ const FilterMap = () => {
   const ultimateFrisbeeStore = { lat: 50.0796, lng: 14.4295 };
   const cafeTvaroh = { lat: 50.0878, lng: 14.4212 };
 
-  // Center = midpoint between the two
+  // Center = midpoint
   const mapCenter = {
     lat: (ultimateFrisbeeStore.lat + cafeTvaroh.lat) / 2,
     lng: (ultimateFrisbeeStore.lng + cafeTvaroh.lng) / 2,
   };
 
   const mapStyles = { height: "80vh", width: "100%" };
+
+  // --- NEW: state for directions result ---
+  const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
+  // --- NEW: ref to store map instance ---
+  const mapRef = useRef<google.maps.Map | null>(null);
+
+  const onMapLoad = (map: google.maps.Map) => {
+    mapRef.current = map;
+    console.log("map loaded");
+
+    // --- NEW: request directions ---
+    const directionsService = new google.maps.DirectionsService();
+    directionsService.route(
+      {
+        origin: ultimateFrisbeeStore,
+        destination: cafeTvaroh,
+        travelMode: google.maps.TravelMode.WALKING,
+      },
+      (result, status) => {
+        if (status === "OK" && result) {
+          setDirections(result);
+        } else {
+          console.error("Directions request failed:", status);
+        }
+      }
+    );
+  };
 
   if (!apiKey) {
     return <div>Missing API Key</div>;
@@ -32,11 +59,8 @@ const FilterMap = () => {
         mapContainerStyle={mapStyles}
         zoom={14}
         center={mapCenter}
-        onLoad={() => {
-          console.log("map loaded");
-        }}
+        onLoad={onMapLoad}
       >
-        {/* ----- MARKERS ADDED HERE ----- */}
         <Marker
           position={ultimateFrisbeeStore}
           title="Ultimate Frisbee Store"
@@ -47,6 +71,14 @@ const FilterMap = () => {
           title="Café Tvaroh"
           icon={{ url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png" }}
         />
+
+        {/* --- NEW: render the route --- */}
+        {directions && (
+          <DirectionsRenderer
+            directions={directions}
+            options={{ suppressMarkers: true }} // prevent default markers (we have our own)
+          />
+        )}
       </GoogleMap>
     </LoadScript>
   );
