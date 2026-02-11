@@ -4,7 +4,7 @@ import axios from "axios";
 import type { State, Action } from "./types";
 import { UserContext } from "./UserContext";
 
-const API_URL = "https://nikolabodr.com/api.php";
+const API_URL = import.meta.env.VITE_API_URL;
 
 const initialState: State = {
   users: [],
