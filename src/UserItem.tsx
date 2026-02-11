@@ -1,4 +1,5 @@
-import { type User, useUsers } from "./context/UserProvider";
+import { type User } from "./context/UserProvider";
+import { useUsers } from "./context/useUsers";
 
 export const UserItem: React.FC<{ user: User }> = ({ user }) => {
   const { updateUser, removeUser } = useUsers();

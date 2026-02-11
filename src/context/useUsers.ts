@@ -1,4 +1,3 @@
-// src/hooks/useUsers.ts
 import { useContext } from "react";
 import { UserContext } from "./UserContext";
 

@@ -1,5 +1,5 @@
 // src/context/UserProvider.tsx
-import React, { useEffect, useReducer, useContext } from "react"; // added useContext
+import React, { useEffect, useReducer } from "react"; // added useContext
 import axios from "axios";
 import type { State, Action } from "./types";
 import { UserContext } from "./UserContext";
@@ -99,12 +99,4 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       {children}
     </UserContext.Provider>
   );
-};
-
-export const useUsers = () => {
-  const context = useContext(UserContext);
-  if (!context) {
-    throw new Error("useUsers must be used within a UserProvider");
-  }
-  return context;
 };
