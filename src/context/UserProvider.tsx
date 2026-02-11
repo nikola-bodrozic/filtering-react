@@ -1,7 +1,8 @@
 // src/context/UserProvider.tsx
-import React, { createContext, useEffect, useReducer } from "react";
+import React, { useEffect, useReducer } from "react";
 import axios from "axios";
 import type { User, State, Action } from "./types"; // type-only import
+import { UserContext } from "./UserContext";
 
 const API_URL = "https://nikolabodr.com/api.php";
 
@@ -34,14 +35,6 @@ function reducer(state: State, action: Action): State {
       return state;
   }
 }
-
-export const UserContext = createContext<null | {
-  state: State;
-  addUser: () => Promise<void>;
-  updateUser: (id: number, field: "name" | "email", value: string) => Promise<void>;
-  removeUser: (id: number) => Promise<void>;
-  refreshUsers: () => Promise<void>;
-}>(null);
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(reducer, initialState);

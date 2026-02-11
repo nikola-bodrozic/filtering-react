@@ -1,6 +1,6 @@
 // src/hooks/useUsers.ts
 import { useContext } from "react";
-import { UserContext } from "../context/UserProvider";
+import { UserContext } from "./UserContext";
 
 export function useUsers() {
   const context = useContext(UserContext);

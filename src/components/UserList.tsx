@@ -1,5 +1,5 @@
 import React from "react";
-import { useUsers } from "../context/UserProvider";
+import { useUsers } from "../context/useUsers";
 
 export const UserList: React.FC = () => {
   const { state, removeUser } = useUsers();
