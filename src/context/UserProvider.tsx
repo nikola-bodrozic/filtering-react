@@ -1,25 +1,9 @@
-import React, { createContext, useContext, useEffect, useReducer } from "react";
+// src/context/UserProvider.tsx
+import React, { createContext, useEffect, useReducer } from "react";
 import axios from "axios";
+import type { User, State, Action } from "./types"; // type-only import
 
-export type User = {
-  id: number;
-  name: string;
-  email: string;
-};
-
-type State = {
-  users: User[];
-  loading: boolean;
-  error: string | null;
-};
-
-type Action =
-  | { type: "setUsers"; users: User[] }
-  | { type: "addUser"; user: User }
-  | { type: "updateUser"; id: number; field: "name" | "email"; value: string }
-  | { type: "removeUser"; id: number }
-  | { type: "setLoading"; loading: boolean }
-  | { type: "setError"; error: string | null };
+const API_URL = "https://nikolabodr.com/api.php";
 
 const initialState: State = {
   users: [],
@@ -51,85 +35,58 @@ function reducer(state: State, action: Action): State {
   }
 }
 
-const UserContext = createContext<{
+export const UserContext = createContext<null | {
   state: State;
   addUser: () => Promise<void>;
   updateUser: (id: number, field: "name" | "email", value: string) => Promise<void>;
   removeUser: (id: number) => Promise<void>;
   refreshUsers: () => Promise<void>;
-} | null>(null);
-
-// eslint-disable-next-line react-refresh/only-export-components
-export function useUsers() {
-  const context = useContext(UserContext);
-  if (!context) throw new Error("useUsers must be used within UserProvider");
-  return context;
-}
-
-// --- API base URL ---
-const API_URL = "https://nikolabodr.com/api.php";
+}>(null);
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  // --- Load all users from API ---
   const refreshUsers = async () => {
     dispatch({ type: "setLoading", loading: true });
     try {
       const res = await axios.get(API_URL);
-      dispatch({ type: "setUsers", users: res.data.users || [] });
-    } catch (err) {
-      console.error(err);
+      dispatch({ type: "setUsers", users: res.data.users ?? [] });
+    } catch {
       dispatch({ type: "setError", error: "Failed to load users" });
     }
   };
 
-  // --- Add new user ---
   const addUser = async () => {
     const newUser: User = {
-      id: Math.floor(Math.random() * 1000000),
+      id: Math.floor(Math.random() * 1_000_000),
       name: `User ${Date.now()}`,
       email: `user${Date.now()}@mail.com`,
     };
     try {
       const res = await axios.post(API_URL, { type: "addUser", user: newUser });
-      if (res.data.users) {
-        dispatch({ type: "setUsers", users: res.data.users });
-      } else {
-        dispatch({ type: "addUser", user: newUser });
-      }
-    } catch (err) {
-      console.error(err);
+      if (res.data.users) dispatch({ type: "setUsers", users: res.data.users });
+      else dispatch({ type: "addUser", user: newUser });
+    } catch {
       dispatch({ type: "setError", error: "Failed to add user" });
     }
   };
 
-  // --- Update user ---
   const updateUser = async (id: number, field: "name" | "email", value: string) => {
     try {
       const res = await axios.post(API_URL, { type: "updateUser", id, field, value });
-      if (res.data.users) {
-        dispatch({ type: "setUsers", users: res.data.users });
-      } else {
-        dispatch({ type: "updateUser", id, field, value });
-      }
-    } catch (err) {
-      console.error(err);
+      if (res.data.users) dispatch({ type: "setUsers", users: res.data.users });
+      else dispatch({ type: "updateUser", id, field, value });
+    } catch {
       dispatch({ type: "setError", error: "Failed to update user" });
     }
   };
 
-  // --- Remove user ---
   const removeUser = async (id: number) => {
     try {
       const res = await axios.post(API_URL, { type: "removeUser", id });
-      if (res.data.users) {
-        dispatch({ type: "setUsers", users: res.data.users });
-      } else {
-        dispatch({ type: "removeUser", id });
-      }
-    } catch (err) {
-      console.error(err);
+      if (res.data.users) dispatch({ type: "setUsers", users: res.data.users });
+      else dispatch({ type: "removeUser", id });
+    } catch {
       dispatch({ type: "setError", error: "Failed to remove user" });
     }
   };

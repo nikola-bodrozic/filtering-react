@@ -23,6 +23,7 @@ const MemoPie = memo(
     isEqual(prevProps, nextProps),
 );
 const MemoAddFruit = memo(AddFruit);
+const MemoRmFruit = memo(RemoveFruit)
 
 export default function App() {
   const [users, setUsers] = useState<User[]>([
@@ -123,7 +124,7 @@ Profession: ${formData.profession}`);
       <hr />
       <MemoPie data={sales2024} title="Car Sales by Manufacturer" />
       <FruitsProvider>
-        <RemoveFruit />
+        <MemoRmFruit />
         <MemoAddFruit />
       </FruitsProvider>
       <FilterMap />
