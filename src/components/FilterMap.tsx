@@ -1,5 +1,5 @@
 import { GoogleMap, LoadScript, Marker, DirectionsRenderer } from "@react-google-maps/api";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 
 const GOOGLE_MAP_LIBRARIES: ("places" | "geometry")[] = ["places", "geometry"];
 
@@ -22,16 +22,68 @@ const FilterMap = () => {
 
   const mapStyles = { height: "80vh", width: "100%" };
 
-  // --- NEW: state for directions result ---
+  // --- State and refs ---
   const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
-  // --- NEW: ref to store map instance ---
   const mapRef = useRef<google.maps.Map | null>(null);
+  
+  // --- NEW: ref for the moving marker and animation timer ---
+  const movingMarkerRef = useRef<google.maps.Marker | null>(null);
+  const aniMarker = useRef<number | null>(null);
 
+  // --- NEW: extract path points from directions result ---
+  const extractPath = (result: google.maps.DirectionsResult, stepSize = 20) => {
+    const route = result.routes[0];
+    const path: google.maps.LatLngLiteral[] = [];
+
+    route.legs.forEach((leg) => {
+      leg.steps.forEach((step) => {
+        step.path.forEach((point, index) => {
+          if (index % stepSize === 0) {
+            path.push({ lat: point.lat(), lng: point.lng() });
+          }
+        });
+      });
+    });
+    return path;
+  };
+
+  // --- NEW: animate the marker along the path ---
+  const animateMarker = (path: google.maps.LatLngLiteral[], speed = 60) => {
+    let index = 0;
+
+    const move = () => {
+      if (!movingMarkerRef.current || index >= path.length) {
+        // We'll handle arrival popup in Step 5
+        console.log("Animation finished");
+        return;
+      }
+      movingMarkerRef.current.setPosition(path[index]);
+      index++;
+      aniMarker.current = setTimeout(move, speed);
+    };
+
+    move();
+  };
+
+  // --- Map load handler ---
   const onMapLoad = (map: google.maps.Map) => {
     mapRef.current = map;
     console.log("map loaded");
 
-    // --- NEW: request directions ---
+    // --- Create moving marker only once ---
+    if (!movingMarkerRef.current) {
+      movingMarkerRef.current = new google.maps.Marker({
+        map,
+        position: ultimateFrisbeeStore,
+        icon: {
+          url: "https://maps.google.com/mapfiles/ms/icons/green-dot.png",
+          scaledSize: new google.maps.Size(40, 40),
+        },
+        zIndex: 9999, // keep it on top
+      });
+    }
+
+    // --- Request directions ---
     const directionsService = new google.maps.DirectionsService();
     directionsService.route(
       {
@@ -42,12 +94,23 @@ const FilterMap = () => {
       (result, status) => {
         if (status === "OK" && result) {
           setDirections(result);
+          
+          // --- NEW: start animation ---
+          const path = extractPath(result);
+          animateMarker(path, 80); // 80ms per step = smooth movement
         } else {
           console.error("Directions request failed:", status);
         }
       }
     );
   };
+
+  // --- Cleanup animation on unmount ---
+  useEffect(() => {
+    return () => {
+      if (aniMarker.current) clearTimeout(aniMarker.current);
+    };
+  }, []);
 
   if (!apiKey) {
     return <div>Missing API Key</div>;
@@ -61,6 +124,7 @@ const FilterMap = () => {
         center={mapCenter}
         onLoad={onMapLoad}
       >
+        {/* Static markers */}
         <Marker
           position={ultimateFrisbeeStore}
           title="Ultimate Frisbee Store"
@@ -72,13 +136,15 @@ const FilterMap = () => {
           icon={{ url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png" }}
         />
 
-        {/* --- NEW: render the route --- */}
+        {/* Route */}
         {directions && (
           <DirectionsRenderer
             directions={directions}
-            options={{ suppressMarkers: true }} // prevent default markers (we have our own)
+            options={{ suppressMarkers: true }}
           />
         )}
+
+        {/* The moving green marker is created imperatively, not as a JSX component */}
       </GoogleMap>
     </LoadScript>
   );
