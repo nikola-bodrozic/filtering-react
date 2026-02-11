@@ -1,14 +1,14 @@
 import { type User, useUsers } from "./context/UserProvider";
 
-export const UserItem: React.FC<{ user: User; }> = ({ user }) => {
-  const { dispatch } = useUsers();
+export const UserItem: React.FC<{ user: User }> = ({ user }) => {
+  const { updateUser, removeUser } = useUsers();
 
   const updateField = (field: "name" | "email", value: string) => {
-    dispatch({ type: "updateUser", id: user.id, field, value });
+    updateUser(user.id, field, value);
   };
 
   const remove = () => {
-    dispatch({ type: "removeUser", id: user.id });
+    removeUser(user.id);
   };
 
   return (
@@ -22,14 +22,18 @@ export const UserItem: React.FC<{ user: User; }> = ({ user }) => {
     >
       <input
         type="text"
+        name="name"
         value={user.name}
         onChange={(e) => updateField("name", e.target.value)}
-        style={{ marginRight: "10px" }} />
+        style={{ marginRight: "10px" }}
+      />
       <input
         type="email"
+        name="email"
         value={user.email}
         onChange={(e) => updateField("email", e.target.value)}
-        style={{ marginRight: "10px" }} />
+        style={{ marginRight: "10px" }}
+      />
       <button onClick={remove}>Remove</button>
     </div>
   );

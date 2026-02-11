@@ -1,7 +1,7 @@
 // src/context/UserProvider.tsx
-import React, { useEffect, useReducer } from "react";
+import React, { useEffect, useReducer, useContext } from "react"; // added useContext
 import axios from "axios";
-import type { User, State, Action } from "./types"; // type-only import
+import type { State, Action } from "./types";
 import { UserContext } from "./UserContext";
 
 const API_URL = "https://nikolabodr.com/api.php";
@@ -11,6 +11,12 @@ const initialState: State = {
   loading: false,
   error: null,
 };
+
+export interface User {
+  id: number;
+  email: string;
+  name: string;
+}
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
@@ -93,4 +99,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       {children}
     </UserContext.Provider>
   );
+};
+
+export const useUsers = () => {
+  const context = useContext(UserContext);
+  if (!context) {
+    throw new Error("useUsers must be used within a UserProvider");
+  }
+  return context;
 };

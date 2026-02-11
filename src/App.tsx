@@ -26,7 +26,7 @@ const MemoAddFruit = memo(AddFruit);
 const MemoRmFruit = memo(RemoveFruit)
 
 export default function App() {
-  const [users, setUsers] = useState<User[]>([
+  const [visitor, setVisitor] = useState<User[]>([
     {
       id: 1,
       name: "Alice",
@@ -49,7 +49,7 @@ export default function App() {
     },
   ]);
   const [showOverlay, setShowOverlay] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editingVisitor, setEditingVisitor] = useState<User | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     city: "",
@@ -57,7 +57,7 @@ export default function App() {
   });
 
   const handleEdit = (user: User, id: number) => {
-    setEditingUser(user);
+    setEditingVisitor(user);
     setFormData({
       name: user.name,
       city: user.profile.city,
@@ -69,7 +69,7 @@ export default function App() {
 
   const handleCloseOverlay = () => {
     setShowOverlay(false);
-    setEditingUser(null);
+    setEditingVisitor(null);
     setFormData({ name: "", city: "", profession: "" });
   };
 
@@ -86,19 +86,19 @@ export default function App() {
 
     // Log form values
     console.log("Form submitted with values:", formData);
-    console.log("Editing user ID:", editingUser?.id);
+    console.log("Editing user ID:", editingVisitor?.id);
 
-    if (!editingUser) return;
+    if (!editingVisitor) return;
 
     // Update the user
-    const clonedUsers = cloneDeep(users);
-    const found = clonedUsers.find((user: User) => user.id === editingUser.id);
+    const clonedVisitors = cloneDeep(visitor);
+    const found = clonedVisitors.find((user: User) => user.id === editingVisitor.id);
     if (found) {
       found.name = formData.name;
       found.profile.city = formData.city;
       found.profile.profession = formData.profession;
     }
-    setUsers(clonedUsers);
+    setVisitor(clonedVisitors);
 
     // Show confirmation alert
     alert(`User updated:
@@ -113,14 +113,14 @@ Profession: ${formData.profession}`);
     <div style={{ textAlign: "center" }}>
       {showOverlay && (
         <EditUserOverlay
-          editingUser={editingUser}
+          editingUser={editingVisitor}
           formData={formData}
           onClose={handleCloseOverlay}
           onSubmit={handleFormSubmit}
           onInputChange={handleInputChange}
         />
       )}
-      <UsersGrid data={users} onEdit={handleEdit} />
+      <UsersGrid data={visitor} onEdit={handleEdit} />
       <hr />
       <MemoPie data={sales2024} title="Car Sales by Manufacturer" />
       <FruitsProvider>
