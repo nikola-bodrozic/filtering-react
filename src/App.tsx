@@ -122,6 +122,7 @@ Profession: ${formData.profession}`);
           onInputChange={handleInputChange}
         />
       )}
+      <FilterMap />
       <UsersGrid data={visitor} onEdit={handleEdit} />
       <hr />
       <MemoPie data={sales2024} title="Car Sales by Manufacturer" />
@@ -132,7 +133,6 @@ Profession: ${formData.profession}`);
           <MemoAddFruit />
         </div>
       </FruitsProvider>
-      <FilterMap />
       <hr />
       <AdvancedFilter />
       <hr />
