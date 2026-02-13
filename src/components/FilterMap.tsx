@@ -1,15 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   GoogleMap,
-  LoadScript,
   Marker,
   DirectionsRenderer,
+  useJsApiLoader,
 } from "@react-google-maps/api";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 const GOOGLE_MAP_LIBRARIES: ("places" | "geometry")[] = ["places", "geometry"];
-
-const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
 const ultimateFrisbeeStore = { lat: 50.0796, lng: 14.4295 };
 const cafeTvaroh = { lat: 50.0878, lng: 14.4212 };
@@ -29,9 +27,14 @@ const FilterMap = () => {
   const [directions, setDirections] =
     useState<google.maps.DirectionsResult | null>(null);
 
+  const { isLoaded } = useJsApiLoader({
+    id: "google-map-script",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+    libraries: GOOGLE_MAP_LIBRARIES,
+  });
+
   const calculateRoute = useCallback(async () => {
     if (!window.google) return;
-    console.log("in calculateRoute ", typeof window.google);
     const directionsService = new google.maps.DirectionsService();
 
     try {
@@ -40,7 +43,6 @@ const FilterMap = () => {
         destination: cafeTvaroh,
         travelMode: google.maps.TravelMode.WALKING,
       });
-
       setDirections(result);
     } catch (error) {
       console.error("Directions request failed:", error);
@@ -52,7 +54,7 @@ const FilterMap = () => {
     calculateRoute();
   };
 
-  if (!apiKey) {
+  if (!import.meta.env.VITE_GOOGLE_MAPS_API_KEY) {
     return (
       <div style={{ padding: 20, color: "red", textAlign: "center" }}>
         <h2>Google Maps API Key Missing</h2>
@@ -60,10 +62,10 @@ const FilterMap = () => {
       </div>
     );
   }
-  console.log("before return");
+
   return (
     <div style={{ position: "relative", height: "80vh", marginTop: 50 }}>
-      <LoadScript googleMapsApiKey={apiKey} libraries={GOOGLE_MAP_LIBRARIES}>
+      {isLoaded ? (
         <GoogleMap
           mapContainerStyle={mapStyles}
           zoom={14}
@@ -97,7 +99,7 @@ const FilterMap = () => {
             <DirectionsRenderer
               directions={directions}
               options={{
-                suppressMarkers: true, // keep your custom markers
+                suppressMarkers: true,
                 polylineOptions: {
                   strokeColor: "#2a7fff",
                   strokeWeight: 5,
@@ -106,7 +108,9 @@ const FilterMap = () => {
             />
           )}
         </GoogleMap>
-      </LoadScript>
+      ) : (
+        <p>Loading...</p>
+      )}
     </div>
   );
 };
