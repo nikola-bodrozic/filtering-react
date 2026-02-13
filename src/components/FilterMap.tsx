@@ -92,8 +92,11 @@ const FilterMap = () => {
     let index = 0;
 
     const step = () => {
+      // Check if the marker still exists before updating position
+      if (!movingMarkerRef.current) return;
+
       if (index < path.length) {
-        movingMarkerRef.current!.setPosition({
+        movingMarkerRef.current.setPosition({
           lat: path[index].lat(),
           lng: path[index].lng(),
         });
@@ -127,27 +130,33 @@ const FilterMap = () => {
         if (infowindowRef.current) {
           infowindowRef.current.close();
         }
-        // Optional: reset state if you need to trigger it again later
         setShowInfoWindow(false);
       }, 4000);
 
-      // Cleanup timer if component unmounts during the countdown
+      // Cleanup timer
       return () => clearTimeout(timer);
     }
   }, [showInfoWindow]);
 
-  // Separate effect for cleanup on unmount
+  // FIX: Comprehensive cleanup for unmount to prevent memory leaks
   useEffect(() => {
     return () => {
-      // Cancel animation
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      // 1. Cancel the animation frame loop
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
 
+      // 2. Clean up the InfoWindow
+      if (infowindowRef.current) {
+        infowindowRef.current.close();
+        infowindowRef.current = null;
+      }
+
+      // 3. Properly remove the marker and clear the ref
       if (movingMarkerRef.current) {
         movingMarkerRef.current.setMap(null);
         movingMarkerRef.current = null;
-      }
-      if (infowindowRef.current) {
-        infowindowRef.current.close();
       }
     };
   }, []);
