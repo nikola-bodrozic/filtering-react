@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   GoogleMap,
   Marker,
@@ -29,8 +28,14 @@ const movingMarkerSvg = `
 const FilterMap = () => {
   const [directions, setDirections] =
     useState<google.maps.DirectionsResult | null>(null);
+  
+  // State to trigger the info window
+  const [showInfoWindow, setShowInfoWindow] = useState(false);
+
   const movingMarkerRef = useRef<google.maps.Marker | null>(null);
   const animationRef = useRef<number | null>(null);
+  // Ref to store the InfoWindow instance
+  const infowindowRef = useRef<google.maps.InfoWindow | null>(null);
 
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
@@ -70,6 +75,13 @@ const FilterMap = () => {
         },
       });
     }
+
+    // Initialize the InfoWindow
+    if (!infowindowRef.current) {
+      infowindowRef.current = new google.maps.InfoWindow({
+        content: `<div style="font-weight:bold; color:#333;">Arrived at Café Tvaroh!</div>`,
+      });
+    }
   };
 
   // Animate the marker along the route using useRef
@@ -87,31 +99,58 @@ const FilterMap = () => {
         });
         index++;
         animationRef.current = requestAnimationFrame(step);
+      } else {
+        // Animation finished - trigger the info window
+        setShowInfoWindow(true);
       }
     };
 
     step();
   }, [directions]);
 
-useEffect(() => {
-  if (directions) {
-    animateMarker();
-  }
-}, [directions, animateMarker]); // runs animation when directions updates
-
-// Separate effect for cleanup on unmount
-useEffect(() => {
-  return () => {
-    // Cancel animation
-    if (animationRef.current) cancelAnimationFrame(animationRef.current);
-
-    if (movingMarkerRef.current) {
-      movingMarkerRef.current.setMap(null);
-      movingMarkerRef.current = null;
+  useEffect(() => {
+    if (directions) {
+      animateMarker();
     }
-  };
-}, []);
+  }, [directions, animateMarker]);
 
+  // Effect to open InfoWindow and close it after 4 seconds
+  useEffect(() => {
+    if (showInfoWindow && movingMarkerRef.current && infowindowRef.current) {
+      infowindowRef.current.open({
+        anchor: movingMarkerRef.current,
+        shouldFocus: false,
+      });
+
+      // Close the info window after 4 seconds
+      const timer = setTimeout(() => {
+        if (infowindowRef.current) {
+          infowindowRef.current.close();
+        }
+        // Optional: reset state if you need to trigger it again later
+        setShowInfoWindow(false);
+      }, 4000);
+
+      // Cleanup timer if component unmounts during the countdown
+      return () => clearTimeout(timer);
+    }
+  }, [showInfoWindow]);
+
+  // Separate effect for cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Cancel animation
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+
+      if (movingMarkerRef.current) {
+        movingMarkerRef.current.setMap(null);
+        movingMarkerRef.current = null;
+      }
+      if (infowindowRef.current) {
+        infowindowRef.current.close();
+      }
+    };
+  }, []);
 
   if (!import.meta.env.VITE_GOOGLE_MAPS_API_KEY) {
     return (
@@ -121,7 +160,7 @@ useEffect(() => {
       </div>
     );
   }
-console.log("before return", movingMarkerRef.current)
+
   return (
     <div style={{ position: "relative", height: "80vh", marginTop: 50 }}>
       {isLoaded ? (
