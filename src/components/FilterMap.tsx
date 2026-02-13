@@ -5,7 +5,7 @@ import {
   DirectionsRenderer,
   useJsApiLoader,
 } from "@react-google-maps/api";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 
 const GOOGLE_MAP_LIBRARIES: ("places" | "geometry")[] = ["places", "geometry"];
 
@@ -19,13 +19,18 @@ const mapCenter = {
 
 const mapStyles = { height: "80vh", width: "100%" };
 
-const FilterMap = () => {
-  useEffect(() => {
-    console.log("FilterMap mounted");
-  }, []);
+// Small SVG for animated marker
+const movingMarkerSvg = `
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24">
+    <circle cx="12" cy="12" r="10" fill="#ff6600" />
+  </svg>
+`;
 
+const FilterMap = () => {
   const [directions, setDirections] =
     useState<google.maps.DirectionsResult | null>(null);
+  const movingMarkerRef = useRef<google.maps.Marker | null>(null);
+  const animationRef = useRef<number | null>(null);
 
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
@@ -49,10 +54,64 @@ const FilterMap = () => {
     }
   }, []);
 
-  const onMapLoad = () => {
-    console.log("map is ready");
+  const onMapLoad = (map: google.maps.Map) => {
     calculateRoute();
+
+    // Create the animated marker once
+    if (!movingMarkerRef.current) {
+      movingMarkerRef.current = new google.maps.Marker({
+        position: ultimateFrisbeeStore,
+        map,
+        icon: {
+          url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
+            movingMarkerSvg
+          )}`,
+          scaledSize: new window.google.maps.Size(24, 24),
+        },
+      });
+    }
   };
+
+  // Animate the marker along the route using useRef
+  const animateMarker = useCallback(() => {
+    if (!directions || !movingMarkerRef.current) return;
+
+    const path = directions.routes[0].overview_path;
+    let index = 0;
+
+    const step = () => {
+      if (index < path.length) {
+        movingMarkerRef.current!.setPosition({
+          lat: path[index].lat(),
+          lng: path[index].lng(),
+        });
+        index++;
+        animationRef.current = requestAnimationFrame(step);
+      }
+    };
+
+    step();
+  }, [directions]);
+
+useEffect(() => {
+  if (directions) {
+    animateMarker();
+  }
+}, [directions, animateMarker]); // runs animation when directions updates
+
+// Separate effect for cleanup on unmount
+useEffect(() => {
+  return () => {
+    // Cancel animation
+    if (animationRef.current) cancelAnimationFrame(animationRef.current);
+
+    if (movingMarkerRef.current) {
+      movingMarkerRef.current.setMap(null);
+      movingMarkerRef.current = null;
+    }
+  };
+}, []);
+
 
   if (!import.meta.env.VITE_GOOGLE_MAPS_API_KEY) {
     return (
@@ -62,7 +121,7 @@ const FilterMap = () => {
       </div>
     );
   }
-
+console.log("before return", movingMarkerRef.current)
   return (
     <div style={{ position: "relative", height: "80vh", marginTop: 50 }}>
       {isLoaded ? (
