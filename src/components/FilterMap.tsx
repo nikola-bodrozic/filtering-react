@@ -4,12 +4,11 @@ import {
   DirectionsRenderer,
   useJsApiLoader,
 } from "@react-google-maps/api";
-import { useEffect, useState, useCallback, useRef } from "react";
-
-const GOOGLE_MAP_LIBRARIES: ("places" | "geometry")[] = ["places", "geometry"];
+import { useRef, useState, useCallback, useEffect } from "react";
 
 const ultimateFrisbeeStore = { lat: 50.0796, lng: 14.4295 };
 const cafeTvaroh = { lat: 50.0878, lng: 14.4212 };
+const mustek = { lat: 50.0833, lng: 14.4220 }; // Mustek train station
 
 const mapCenter = {
   lat: (ultimateFrisbeeStore.lat + cafeTvaroh.lat) / 2,
@@ -17,208 +16,213 @@ const mapCenter = {
 };
 
 const mapStyles = { height: "80vh", width: "100%" };
-
-// Small SVG for animated marker
 const movingMarkerSvg = `
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24">
-    <circle cx="12" cy="12" r="10" fill="#ff6600" />
-  </svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24">
+  <circle cx="12" cy="12" r="10" fill="#ff6600" />
+</svg>
 `;
 
-const FilterMap = () => {
-  const [directions, setDirections] =
-    useState<google.maps.DirectionsResult | null>(null);
-  
-  // State to trigger the info window
-  const [showInfoWindow, setShowInfoWindow] = useState(false);
+const GOOGLE_MAP_LIBRARIES: ("places" | "geometry")[] = ["places", "geometry"];
 
+const SPEED_MPS = 40;
+
+const FilterMap = () => {
+  const mapRef = useRef<google.maps.Map | null>(null);
   const movingMarkerRef = useRef<google.maps.Marker | null>(null);
   const animationRef = useRef<number | null>(null);
-  // Ref to store the InfoWindow instance
-  const infowindowRef = useRef<google.maps.InfoWindow | null>(null);
+  const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
+
+  const [directions, setDirections] =
+    useState<google.maps.DirectionsResult | null>(null);
+  const [mapReady, setMapReady] = useState(false);
 
   const { isLoaded } = useJsApiLoader({
-    id: "google-map-script",
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
     libraries: GOOGLE_MAP_LIBRARIES,
   });
 
-  const calculateRoute = useCallback(async () => {
-    if (!window.google) return;
-    const directionsService = new google.maps.DirectionsService();
+  const handleMapLoad = useCallback((map: google.maps.Map) => {
+    mapRef.current = map;
 
-    try {
-      const result = await directionsService.route({
+    if (!movingMarkerRef.current) {
+      movingMarkerRef.current = new google.maps.Marker({
+        map,
+        position: ultimateFrisbeeStore,
+        icon: {
+          url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
+            movingMarkerSvg
+          )}`,
+          scaledSize: new google.maps.Size(24, 24),
+        },
+      });
+    }
+  }, []);
+
+  const handleMapIdle = useCallback(() => {
+    if (!mapReady) setMapReady(true);
+  }, [mapReady]);
+
+  useEffect(() => {
+    if (!mapReady || !window.google) return;
+
+    const fetchRouteAndAnimate = async () => {
+      const service = new google.maps.DirectionsService();
+      const result = await service.route({
         origin: ultimateFrisbeeStore,
         destination: cafeTvaroh,
         travelMode: google.maps.TravelMode.WALKING,
       });
       setDirections(result);
-    } catch (error) {
-      console.error("Directions request failed:", error);
-    }
-  }, []);
 
-  const onMapLoad = (map: google.maps.Map) => {
-    calculateRoute();
+      // Animate moving marker along route
+      // if (!result || !movingMarkerRef.current) return;
 
-    // Create the animated marker once
-    if (!movingMarkerRef.current) {
-      movingMarkerRef.current = new google.maps.Marker({
-        position: ultimateFrisbeeStore,
-        map,
-        icon: {
-          url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
-            movingMarkerSvg
-          )}`,
-          scaledSize: new window.google.maps.Size(24, 24),
-        },
-      });
-    }
+      const path = result.routes[0].overview_path;
 
-    // Initialize the InfoWindow
-    if (!infowindowRef.current) {
-      infowindowRef.current = new google.maps.InfoWindow({
-        content: `<div style="font-weight:bold; color:#333;">Arrived at Café Tvaroh!</div>`,
-      });
-    }
-  };
+      // Precompute segment distances
+      const distances: number[] = [];
+      let totalDistance = 0;
 
-  // Animate the marker along the route using useRef
-  const animateMarker = useCallback(() => {
-    if (!directions || !movingMarkerRef.current) return;
-
-    const path = directions.routes[0].overview_path;
-    let index = 0;
-
-    const step = () => {
-      // Check if the marker still exists before updating position
-      if (!movingMarkerRef.current) return;
-
-      if (index < path.length) {
-        movingMarkerRef.current.setPosition({
-          lat: path[index].lat(),
-          lng: path[index].lng(),
-        });
-        index++;
-        animationRef.current = requestAnimationFrame(step);
-      } else {
-        // Animation finished - trigger the info window
-        setShowInfoWindow(true);
+      for (let i = 0; i < path.length - 1; i++) {
+        const d = google.maps.geometry.spherical.computeDistanceBetween(
+          path[i],
+          path[i + 1]
+        );
+        distances.push(d);
+        totalDistance += d;
       }
-    };
 
-    step();
-  }, [directions]);
+      let traveled = 0;
+      let lastTime: number | null = null;
+      let pausedUntilTime: number | null = null;
+      let hasStoppedAtMustek = false;
 
-  useEffect(() => {
-    if (directions) {
-      animateMarker();
-    }
-  }, [directions, animateMarker]);
+      const animate = (time: number) => {
+        if (!lastTime) lastTime = time;
 
-  // Effect to open InfoWindow and close it after 4 seconds
-  useEffect(() => {
-    if (showInfoWindow && movingMarkerRef.current && infowindowRef.current) {
-      infowindowRef.current.open({
-        anchor: movingMarkerRef.current,
-        shouldFocus: false,
-      });
-
-      // Close the info window after 4 seconds
-      const timer = setTimeout(() => {
-        if (infowindowRef.current) {
-          infowindowRef.current.close();
+        // Handle pause countdown
+        if (pausedUntilTime !== null) {
+          if (time >= pausedUntilTime) {
+            pausedUntilTime = null;
+            // Close the info window
+            if (infoWindowRef.current) {
+              infoWindowRef.current.close();
+            }
+            lastTime = time;
+          } else {
+            animationRef.current = requestAnimationFrame(animate);
+            return;
+          }
         }
-        setShowInfoWindow(false);
-      }, 4000);
 
-      // Cleanup timer
-      return () => clearTimeout(timer);
-    }
-  }, [showInfoWindow]);
+        const deltaSec = (time - lastTime) / 1000;
+        lastTime = time;
 
-  // FIX: Comprehensive cleanup for unmount to prevent memory leaks
-  useEffect(() => {
-    return () => {
-      // 1. Cancel the animation frame loop
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-        animationRef.current = null;
-      }
+        traveled += SPEED_MPS * deltaSec;
 
-      // 2. Clean up the InfoWindow
-      if (infowindowRef.current) {
-        infowindowRef.current.close();
-        infowindowRef.current = null;
-      }
+        if (traveled >= totalDistance) {
+          movingMarkerRef.current!.setPosition(cafeTvaroh);
+          
+          // Show arrival info window
+          const arrivalWindow = new google.maps.InfoWindow({
+            content: "<div><strong>You have arrived!</strong></div>",
+          });
+          arrivalWindow.open(mapRef.current, movingMarkerRef.current);
+          
+          // Close it after 3 seconds
+          setTimeout(() => {
+            arrivalWindow.close();
+          }, 3000);
+          
+          return;
+        }
 
-      // 3. Properly remove the marker and clear the ref
-      if (movingMarkerRef.current) {
-        movingMarkerRef.current.setMap(null);
-        movingMarkerRef.current = null;
-      }
+        // Find segment
+        let segmentIndex = 0;
+        let segmentStartDistance = 0;
+
+        while (
+          segmentIndex < distances.length &&
+          segmentStartDistance + distances[segmentIndex] < traveled
+        ) {
+          segmentStartDistance += distances[segmentIndex];
+          segmentIndex++;
+        }
+
+        const segmentProgress =
+          (traveled - segmentStartDistance) / distances[segmentIndex];
+
+        const from = path[segmentIndex];
+        const to = path[segmentIndex + 1];
+
+        const position = google.maps.geometry.spherical.interpolate(
+          from,
+          to,
+          segmentProgress
+        );
+
+        movingMarkerRef.current!.setPosition(position);
+
+        // Check if near Mustek (within ~200 meters)
+        const distanceToMustek =
+          google.maps.geometry.spherical.computeDistanceBetween(position, mustek);
+
+        if (distanceToMustek < 200 && !hasStoppedAtMustek) {
+          hasStoppedAtMustek = true;
+          pausedUntilTime = time + 5000; // 5 seconds in milliseconds
+
+          // Show info window
+          if (!infoWindowRef.current) {
+            infoWindowRef.current = new google.maps.InfoWindow({
+              content: "<div><strong>Mustek Train Station</strong><br/>Stopping for 5 seconds</div>",
+            });
+          }
+          infoWindowRef.current.open(mapRef.current, movingMarkerRef.current);
+        }
+
+        animationRef.current = requestAnimationFrame(animate);
+      };
+
+      animationRef.current = requestAnimationFrame(animate);
     };
-  }, []);
 
-  if (!import.meta.env.VITE_GOOGLE_MAPS_API_KEY) {
-    return (
-      <div style={{ padding: 20, color: "red", textAlign: "center" }}>
-        <h2>Google Maps API Key Missing</h2>
-        <p>Add VITE_GOOGLE_MAPS_API_KEY to your .env file</p>
-      </div>
-    );
-  }
+    fetchRouteAndAnimate();
 
-  return (
-    <div style={{ position: "relative", height: "80vh", marginTop: 50 }}>
-      {isLoaded ? (
-        <GoogleMap
-          mapContainerStyle={mapStyles}
-          zoom={14}
-          center={mapCenter}
+    return () => {
+      // Clean up animation on unmount
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    };
+  }, [mapReady]);
+
+  if (!import.meta.env.VITE_GOOGLE_MAPS_API_KEY)
+    return <p>Missing Google Maps API Key</p>;
+
+  return isLoaded ? (
+    <GoogleMap
+      mapContainerStyle={mapStyles}
+      center={mapCenter}
+      zoom={14}
+      onLoad={handleMapLoad}
+      onIdle={handleMapIdle}
+    >
+      <Marker position={ultimateFrisbeeStore} />
+      <Marker position={cafeTvaroh} />
+
+      {directions && (
+        <DirectionsRenderer
+          directions={directions}
           options={{
-            zoomControl: true,
-            streetViewControl: false,
-            mapTypeControl: false,
-            fullscreenControl: true,
-            gestureHandling: "cooperative",
-            clickableIcons: false,
-            keyboardShortcuts: false,
+            suppressMarkers: true,
+            polylineOptions: {
+              strokeColor: "#2a7fff",
+              strokeWeight: 5,
+            },
           }}
-          onLoad={onMapLoad}
-        >
-          <Marker
-            position={ultimateFrisbeeStore}
-            title="Ultimate Frisbee Store"
-            icon={{
-              url: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
-            }}
-          />
-          <Marker
-            position={cafeTvaroh}
-            title="Café Tvaroh"
-            icon={{
-              url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
-            }}
-          />
-          {directions && (
-            <DirectionsRenderer
-              directions={directions}
-              options={{
-                suppressMarkers: true,
-                polylineOptions: {
-                  strokeColor: "#2a7fff",
-                  strokeWeight: 5,
-                },
-              }}
-            />
-          )}
-        </GoogleMap>
-      ) : (
-        <p>Loading...</p>
+        />
       )}
-    </div>
+    </GoogleMap>
+  ) : (
+    <p>Loading map...</p>
   );
 };
 
